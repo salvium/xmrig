@@ -102,6 +102,12 @@ RandomX_ConfigurationSafex::RandomX_ConfigurationSafex()
 	ArgonSalt = "RandomSFX\x01";
 }
 
+RandomX_ConfigurationSalvium::RandomX_ConfigurationSalvium()
+{
+  ArgonIterations = 4;
+  ArgonSalt = "RandomXSalvium\x01";
+}
+
 RandomX_ConfigurationYada::RandomX_ConfigurationYada()
 {
 	ArgonSalt = "RandomXYadaCoin\x03";
@@ -368,6 +374,7 @@ RandomX_ConfigurationWownero RandomX_WowneroConfig;
 RandomX_ConfigurationArqma RandomX_ArqmaConfig;
 RandomX_ConfigurationGraft RandomX_GraftConfig;
 RandomX_ConfigurationSafex RandomX_SafexConfig;
+RandomX_ConfigurationSalvium RandomX_SalviumConfig;
 RandomX_ConfigurationYada RandomX_YadaConfig;
 
 alignas(64) RandomX_ConfigurationBase RandomX_CurrentConfig;
