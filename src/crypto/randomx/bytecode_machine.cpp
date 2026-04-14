@@ -465,9 +465,9 @@ namespace randomx {
 			ibc.idst = &nreg->r[creg];
 			ibc.target = registerUsage[creg];
 			const int shift = instr.getModCond();
-			ibc.imm = signExtend2sCompl(instr.getImm32()) | ((1ULL << RandomX_ConfigurationBase::JumpOffset) << shift);
-			ibc.imm &= ~((1ULL << (RandomX_ConfigurationBase::JumpOffset - 1)) << shift);
-			ibc.memMask = RandomX_ConfigurationBase::ConditionMask_Calculated << shift;
+			ibc.imm = signExtend2sCompl(instr.getImm32()) | ((1ULL << RandomX_CurrentConfig.JumpOffset) << shift);
+			ibc.imm &= ~((1ULL << (RandomX_CurrentConfig.JumpOffset - 1)) << shift);
+			ibc.memMask = RandomX_CurrentConfig.ConditionMask_Calculated << shift;
 			//mark all registers as used
 			for (unsigned j = 0; j < RegistersCount; ++j) {
 				registerUsage[j] = i;

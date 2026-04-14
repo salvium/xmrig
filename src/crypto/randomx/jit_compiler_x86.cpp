@@ -1403,11 +1403,11 @@ namespace randomx {
 
 		*(uint32_t*)(p + pos) = 0x00c08149 + (reg << 16);
 		const int shift = instr.getModCond();
-		const uint32_t or_mask = (1UL << RandomX_ConfigurationBase::JumpOffset) << shift;
-		const uint32_t and_mask = rotl32(~static_cast<uint32_t>(1UL << (RandomX_ConfigurationBase::JumpOffset - 1)), shift);
+		const uint32_t or_mask = (1UL << RandomX_CurrentConfig.JumpOffset) << shift;
+		const uint32_t and_mask = rotl32(~static_cast<uint32_t>(1UL << (RandomX_CurrentConfig.JumpOffset - 1)), shift);
 		*(uint32_t*)(p + pos + 3) = (instr.getImm32() | or_mask) & and_mask;
 		*(uint32_t*)(p + pos + 7) = 0x00c0f749 + (reg << 16);
-		*(uint32_t*)(p + pos + 10) = RandomX_ConfigurationBase::ConditionMask_Calculated << shift;
+		*(uint32_t*)(p + pos + 10) = RandomX_CurrentConfig.ConditionMask_Calculated << shift;
 		pos += 14;
 
 		if (jmp_offset >= -128) {

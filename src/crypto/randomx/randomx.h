@@ -63,7 +63,9 @@ struct RandomX_ConfigurationBase
 	RandomX_ConfigurationBase();
 
 	void Apply();
-
+    void RecalculateDerived();
+  
+  /*
 	// Common parameters for all RandomX variants
 	enum Params : uint64_t
 	{
@@ -78,8 +80,23 @@ struct RandomX_ConfigurationBase
 		DatasetExtraItems_Calculated = DatasetExtraSize / RANDOMX_DATASET_ITEM_SIZE,
 		ConditionMask_Calculated = ((1 << JumpBits) - 1) << JumpOffset,
 	};
+  */
 
-	uint32_t ArgonIterations;
+    uint64_t ArgonMemory;
+    uint64_t CacheAccesses;
+    uint64_t SuperscalarMaxLatency;
+
+    uint64_t DatasetBaseSize;
+    uint64_t DatasetExtraSize;
+
+    uint64_t JumpBits;
+    uint64_t JumpOffset;
+
+    uint64_t CacheLineAlignMask_Calculated;
+    uint64_t DatasetExtraItems_Calculated;
+    uint64_t ConditionMask_Calculated;
+
+    uint32_t ArgonIterations;
 	uint32_t ArgonLanes;
 	const char* ArgonSalt;
 	uint32_t SuperscalarLatency;

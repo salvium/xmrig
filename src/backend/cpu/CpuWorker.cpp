@@ -50,6 +50,28 @@
 #endif
 
 
+namespace {
+
+  static constexpr uint8_t POW_DOMAIN[] = {
+    'S','A','L','V','I','U','M','-','P','O','W','-','V','1'
+  };
+
+  static constexpr size_t POW_DOMAIN_LEN = sizeof(POW_DOMAIN);
+
+  inline bool is_salvium_rx(const xmrig::Job &job)
+  {
+    return job.algorithm().id() == xmrig::Algorithm::RX_SALVIUM;
+  }
+
+  inline size_t build_salvium_pow_input(const uint8_t *blob, size_t blob_size, uint8_t *out)
+  {
+    memcpy(out, POW_DOMAIN, POW_DOMAIN_LEN);
+    memcpy(out + POW_DOMAIN_LEN, blob, blob_size);
+    return POW_DOMAIN_LEN + blob_size;
+  }
+
+} // anonymous namespace
+
 namespace xmrig {
 
 static constexpr uint32_t kReserveCount = 32768;
@@ -291,23 +313,50 @@ void xmrig::CpuWorker<N>::start()
 #           ifdef XMRIG_ALGO_RANDOMX
             uint8_t* miner_signature_ptr = m_job.blob() + m_job.nonceOffset() + m_job.nonceSize();
             if (job.algorithm().family() == Algorithm::RANDOM_X) {
-                if (first) {
+
+                const bool salvium_rx = is_salvium_rx(job);
+                if (salvium_rx) {
+
+                  uint8_t pow_input[POW_DOMAIN_LEN + Job::kMaxBlobSize];
+
+                  if (first) {
+                    first = false;
+                  }
+
+                  if (!nextRound()) {
+                    break;
+                  }
+
+                  if (job.hasMinerSignature()) {
+                    job.generateMinerSignature(m_job.blob(), job.size(), miner_signature_ptr);
+                    memcpy(miner_signature_saved, miner_signature_ptr, sizeof(miner_signature_saved));
+                  }
+
+                  build_salvium_pow_input(m_job.blob(), job.size(), pow_input);
+                  randomx_calculate_hash(m_vm, pow_input, POW_DOMAIN_LEN + job.size(), m_hash);
+                    
+                } else {
+                    
+                  if (first) {
                     first = false;
                     if (job.hasMinerSignature()) {
                         job.generateMinerSignature(m_job.blob(), job.size(), miner_signature_ptr);
                     }
+                    
                     randomx_calculate_hash_first(m_vm, tempHash, m_job.blob(), job.size());
-                }
+                  }
 
-                if (!nextRound()) {
+                  if (!nextRound()) {
                     break;
-                }
+                  }
 
-                if (job.hasMinerSignature()) {
+                  if (job.hasMinerSignature()) {
                     memcpy(miner_signature_saved, miner_signature_ptr, sizeof(miner_signature_saved));
                     job.generateMinerSignature(m_job.blob(), job.size(), miner_signature_ptr);
+                  }
+                  
+                  randomx_calculate_hash_next(m_vm, tempHash, m_job.blob(), job.size(), m_hash);
                 }
-                randomx_calculate_hash_next(m_vm, tempHash, m_job.blob(), job.size(), m_hash);
             }
             else
 #           endif

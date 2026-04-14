@@ -104,8 +104,13 @@ RandomX_ConfigurationSafex::RandomX_ConfigurationSafex()
 
 RandomX_ConfigurationSalvium::RandomX_ConfigurationSalvium()
 {
-  ArgonIterations = 4;
-  ArgonSalt = "RandomXSalvium\x01";
+    /*
+    ArgonSalt = "RandomXSalvium\x01";
+    ArgonMemory     = 524288;
+    ArgonIterations = 4;
+    DatasetBaseSize = 4294967296ULL;
+    RecalculateDerived();
+    */
 }
 
 RandomX_ConfigurationYada::RandomX_ConfigurationYada()
@@ -116,7 +121,17 @@ RandomX_ConfigurationYada::RandomX_ConfigurationYada()
 }
 
 RandomX_ConfigurationBase::RandomX_ConfigurationBase()
-	: ArgonIterations(3)
+	: ArgonMemory(262144)
+    , CacheAccesses(8)
+    , SuperscalarMaxLatency(170)
+    , DatasetBaseSize(2147483648ULL)
+    , DatasetExtraSize(33554368ULL)
+    , JumpBits(8)
+    , JumpOffset(8)
+    , CacheLineAlignMask_Calculated(0)
+    , DatasetExtraItems_Calculated(0)
+    , ConditionMask_Calculated(0)
+    , ArgonIterations(3)
 	, ArgonLanes(1)
 	, ArgonSalt("RandomX\x03")
 	, SuperscalarLatency(170)
@@ -196,6 +211,8 @@ RandomX_ConfigurationBase::RandomX_ConfigurationBase()
 		codePrefetchScratchpadTweakedSize = b - a;
 	}
 #	endif
+    
+    RecalculateDerived();
 }
 
 #if (XMRIG_ARM == 8) || defined(XMRIG_RISCV)
@@ -211,6 +228,8 @@ void randomx_set_scratchpad_prefetch_mode(int mode)
 
 void RandomX_ConfigurationBase::Apply()
 {
+    RecalculateDerived();
+    
 	const uint32_t ScratchpadL1Mask_Calculated = (ScratchpadL1_Size / sizeof(uint64_t) - 1) * 8;
 	const uint32_t ScratchpadL2Mask_Calculated = (ScratchpadL2_Size / sizeof(uint64_t) - 1) * 8;
 
@@ -367,6 +386,13 @@ typedef void(randomx::JitCompilerX86::* InstructionGeneratorX86_2)(const randomx
 	INST_HANDLE(ISTORE, CFROUND);
 	INST_HANDLE(NOP, ISTORE);
 #undef INST_HANDLE
+}
+
+void RandomX_ConfigurationBase::RecalculateDerived()
+{
+    CacheLineAlignMask_Calculated = (DatasetBaseSize - 1) & ~(uint64_t(RANDOMX_DATASET_ITEM_SIZE) - 1);
+    DatasetExtraItems_Calculated  = DatasetExtraSize / RANDOMX_DATASET_ITEM_SIZE;
+    ConditionMask_Calculated      = ((1u << JumpBits) - 1u) << JumpOffset;
 }
 
 RandomX_ConfigurationMonero RandomX_MoneroConfig;
