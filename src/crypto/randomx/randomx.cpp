@@ -104,13 +104,9 @@ RandomX_ConfigurationSafex::RandomX_ConfigurationSafex()
 
 RandomX_ConfigurationSalvium::RandomX_ConfigurationSalvium()
 {
-    /*
     ArgonSalt = "RandomXSalvium\x01";
-    ArgonMemory     = 524288;
     ArgonIterations = 4;
-    DatasetBaseSize = 4294967296ULL;
     RecalculateDerived();
-    */
 }
 
 RandomX_ConfigurationYada::RandomX_ConfigurationYada()

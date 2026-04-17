@@ -8,6 +8,8 @@
 #include "randomx_constants_arqma.h"
 #elif (ALGO == ALGO_RX_GRAFT)
 #include "randomx_constants_graft.h"
+#elif (ALGO == ALGO_RX_SALVIUM)
+#include "randomx_constants_salvium.h"
 #endif
 
 #include "aes.cl"

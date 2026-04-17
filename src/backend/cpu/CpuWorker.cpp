@@ -283,6 +283,7 @@ void xmrig::CpuWorker<N>::start()
 
         while (!Nonce::isOutdated(Nonce::CPU, m_job.sequence())) {
             const Job &job = m_job.currentJob();
+            const bool salvium_rx = is_salvium_rx(job);
 
             if (job.algorithm().l3() != m_algorithm.l3()) {
                 break;
@@ -314,11 +315,10 @@ void xmrig::CpuWorker<N>::start()
             uint8_t* miner_signature_ptr = m_job.blob() + m_job.nonceOffset() + m_job.nonceSize();
             if (job.algorithm().family() == Algorithm::RANDOM_X) {
 
-                const bool salvium_rx = is_salvium_rx(job);
                 if (salvium_rx) {
 
                   uint8_t pow_input[POW_DOMAIN_LEN + Job::kMaxBlobSize];
-
+                  
                   if (first) {
                     first = false;
                   }
@@ -334,7 +334,7 @@ void xmrig::CpuWorker<N>::start()
 
                   build_salvium_pow_input(m_job.blob(), job.size(), pow_input);
                   randomx_calculate_hash(m_vm, pow_input, POW_DOMAIN_LEN + job.size(), m_hash);
-                    
+                  
                 } else {
                     
                   if (first) {
@@ -397,7 +397,14 @@ void xmrig::CpuWorker<N>::start()
                     else
 #                   endif
                     if (value < job.target()) {
+                      if (salvium_rx) {
+                        Job submit_job = job;
+                        memcpy(submit_job.blob(), m_job.blob(), job.size());
+                        const uint32_t submit_nonce = *submit_job.nonce();
+                        JobResults::submit(submit_job, submit_nonce, m_hash + (i * 32), job.hasMinerSignature() ? miner_signature_saved : nullptr);
+                      } else {
                         JobResults::submit(job, current_job_nonces[i], m_hash + (i * 32), job.hasMinerSignature() ? miner_signature_saved : nullptr);
+                      }
                     }
                 }
                 m_count += N;

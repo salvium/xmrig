@@ -66,7 +66,7 @@
 .global DECL(randomx_program_end)
 .global DECL(randomx_reciprocal_fast)
 
-#define RANDOMX_SCRATCHPAD_MASK      2097088
+#define RANDOMX_SCRATCHPAD_MASK      4194240
 #define RANDOMX_DATASET_BASE_MASK    2147483584
 #define RANDOMX_CACHE_MASK           4194303
 

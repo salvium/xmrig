@@ -50,6 +50,7 @@ function rx()
         'randomx_constants_wow.h',
         'randomx_constants_arqma.h',
         'randomx_constants_graft.h',
+        'randomx_constants_salvium.h',
         'aes.cl',
         'blake2b.cl',
         'randomx_vm.cl',
