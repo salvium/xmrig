@@ -65,23 +65,6 @@ struct RandomX_ConfigurationBase
 	void Apply();
     void RecalculateDerived();
   
-  /*
-	// Common parameters for all RandomX variants
-	enum Params : uint64_t
-	{
-		ArgonMemory = 262144,
-		CacheAccesses = 8,
-		SuperscalarMaxLatency = 170,
-		DatasetBaseSize = 2147483648,
-		DatasetExtraSize = 33554368,
-		JumpBits = 8,
-		JumpOffset = 8,
-		CacheLineAlignMask_Calculated = (DatasetBaseSize - 1) & ~(RANDOMX_DATASET_ITEM_SIZE - 1),
-		DatasetExtraItems_Calculated = DatasetExtraSize / RANDOMX_DATASET_ITEM_SIZE,
-		ConditionMask_Calculated = ((1 << JumpBits) - 1) << JumpOffset,
-	};
-  */
-
     uint64_t ArgonMemory;
     uint64_t CacheAccesses;
     uint64_t SuperscalarMaxLatency;
@@ -194,6 +177,8 @@ void randomx_set_optimized_dataset_init(int value);
 extern "C" {
 #endif
 
+  int randomx_salvium_self_test();
+  
 /**
  * Creates a randomx_cache structure and allocates memory for RandomX Cache.
  *

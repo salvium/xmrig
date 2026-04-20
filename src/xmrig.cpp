@@ -20,9 +20,16 @@
 #include "base/kernel/Entry.h"
 #include "base/kernel/Process.h"
 
+#include "crypto/randomx/randomx.h"
 
 int main(int argc, char **argv)
 {
+    const char *selftest = getenv("XMRIG_RANDOMX_SELFTEST");
+    if (selftest && strcmp(selftest, "1") == 0) {
+      randomx_salvium_self_test();
+      return 0;
+    }
+
     using namespace xmrig;
 
     Process process(argc, argv);

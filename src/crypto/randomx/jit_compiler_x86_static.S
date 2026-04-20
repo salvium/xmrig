@@ -68,7 +68,8 @@
 
 #define RANDOMX_SCRATCHPAD_MASK      4194240
 #define RANDOMX_DATASET_BASE_MASK    2147483584
-#define RANDOMX_CACHE_MASK           4194303
+#define RANDOMX_CACHE_MASK           8388607
+//#define RANDOMX_CACHE_MASK           4194303
 
 #define db .byte
 

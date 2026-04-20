@@ -106,6 +106,7 @@ RandomX_ConfigurationSalvium::RandomX_ConfigurationSalvium()
 {
     ArgonSalt = "RandomXSalvium\x01";
     ArgonIterations = 4;
+    ArgonMemory = 524288;
     RecalculateDerived();
 }
 
@@ -405,6 +406,86 @@ static std::mutex vm_pool_mutex;
 
 extern "C" {
 
+  static void dump_hex(const char *label, const uint8_t *p, size_t n)
+  {
+    printf("%s:", label);
+    for (size_t i = 0; i < n; ++i) {
+      printf("%02x", p[i]);
+    }
+    printf("\n");
+  }
+
+  int randomx_salvium_self_test()
+  {
+    RandomX_SalviumConfig.ArgonMemory = 524288;
+    RandomX_SalviumConfig.RecalculateDerived();
+    randomx_apply_config(RandomX_SalviumConfig);
+
+    const char key[] = "salvium-test-key-001";
+    uint8_t blob[80];
+    for (size_t i = 0; i < sizeof(blob); ++i) {
+      blob[i] = (uint8_t) i;
+    }
+
+    randomx_flags flags = RANDOMX_FLAG_JIT;
+
+    const size_t cache_bytes = (size_t) RandomX_CurrentConfig.ArgonMemory * 1024;
+    auto *cache_mem = new uint8_t[cache_bytes];
+    randomx_cache *cache = randomx_create_cache(flags, cache_mem);
+    randomx_init_cache(cache, key, strlen(key));
+    dump_hex("cache64", cache_mem, 64);
+
+    uint8_t *light_scratchpad = nullptr;
+    if (posix_memalign(reinterpret_cast<void **>(&light_scratchpad), 64, RandomX_CurrentConfig.ScratchpadL3_Size) != 0) {
+      light_scratchpad = nullptr;
+    }
+    uint8_t *full_scratchpad = nullptr;
+    if (posix_memalign(reinterpret_cast<void **>(&full_scratchpad), 64, RandomX_CurrentConfig.ScratchpadL3_Size) != 0) {
+      full_scratchpad = nullptr;
+    }
+    
+    randomx_vm *light_vm = randomx_create_vm(flags, cache, nullptr, light_scratchpad, 0);
+    uint8_t light_hash[32];
+    randomx_calculate_hash(light_vm, blob, sizeof(blob), light_hash);
+    dump_hex("light_hash", light_hash, 32);
+    randomx_destroy_vm(light_vm);
+
+    const size_t dataset_bytes =
+      (size_t)(RandomX_CurrentConfig.DatasetBaseSize + RandomX_CurrentConfig.DatasetExtraSize);
+    auto *dataset_mem = new uint8_t[dataset_bytes];
+    randomx_dataset *dataset = randomx_create_dataset(dataset_mem);
+
+    const unsigned long items = randomx_dataset_item_count();
+    const unsigned long step = items / 100 ? items / 100 : 1;
+
+    for (unsigned long start = 0; start < items; start += step) {
+      const unsigned long count = (start + step <= items) ? step : (items - start);
+      randomx_init_dataset(dataset, cache, start, count);
+      printf("dataset progress: %lu / %lu\n", start + count, items);
+      fflush(stdout);
+    }
+
+    randomx_vm *full_vm = randomx_create_vm(
+                                            static_cast<randomx_flags>(flags | RANDOMX_FLAG_FULL_MEM),
+                                            nullptr, dataset, full_scratchpad, 0
+                                            );
+
+    uint8_t full_hash[32];
+    randomx_calculate_hash(full_vm, blob, sizeof(blob), full_hash);
+    dump_hex("full_hash", full_hash, 32);
+
+    randomx_destroy_vm(full_vm);
+    randomx_release_dataset(dataset);
+    randomx_release_cache(cache);
+    delete[] dataset_mem;
+    delete[] cache_mem;
+
+    free(light_scratchpad);
+    free(full_scratchpad);
+    
+    return 0;
+  }
+  
 	randomx_cache *randomx_create_cache(randomx_flags flags, uint8_t *memory) {
 		if (!memory) {
 			return nullptr;
