@@ -107,7 +107,7 @@ RandomX_ConfigurationSalvium::RandomX_ConfigurationSalvium()
     ArgonSalt = "RandomXSalvium\x01";
     ArgonIterations = 4;
     ArgonMemory = 524288;
-    RecalculateDerived();
+    //RecalculateDerived();
 }
 
 RandomX_ConfigurationYada::RandomX_ConfigurationYada()

@@ -681,7 +681,7 @@ namespace randomx {
 	template<size_t N>
 	void JitCompilerRV64::generateSuperscalarHash(SuperscalarProgram(&programs)[N]) {
 		if (optimizedDatasetInit > 0) {
-			entryDataInitOptimized = generateDatasetInitVectorRV64(vectorCode, vectorCodeSize, programs, RandomX_ConfigurationBase::CacheAccesses);
+			entryDataInitOptimized = generateDatasetInitVectorRV64(vectorCode, vectorCodeSize, programs, RandomX_CurrentConfig.CacheAccesses);
 			return;
 		}
 
@@ -691,7 +691,7 @@ namespace randomx {
 
 		std::pair<uint32_t, uint32_t> lastLiteral{ 0xFFFFFFFFUL, 0xFFFFFFFFUL };
 
-		for (int j = RandomX_ConfigurationBase::CacheAccesses - 1; (j >= 0) && (lastLiteral.first == 0xFFFFFFFFUL); --j) {
+		for (int j = RandomX_CurrentConfig.CacheAccesses - 1; (j >= 0) && (lastLiteral.first == 0xFFFFFFFFUL); --j) {
 			SuperscalarProgram& prog = programs[j];
 			for (int i = prog.getSize() - 1; i >= 0; --i) {
 				if (prog(i).opcode == static_cast<uint8_t>(SuperscalarInstructionType::IMUL_RCP)) {
@@ -702,14 +702,14 @@ namespace randomx {
 			}
 		}
 
-		for (unsigned j = 0; j < RandomX_ConfigurationBase::CacheAccesses; ++j) {
+		for (unsigned j = 0; j < RandomX_CurrentConfig.CacheAccesses; ++j) {
 			SuperscalarProgram& prog = programs[j];
 			for (unsigned i = 0; i < prog.getSize(); ++i) {
 				Instruction instr = prog(i);
 				generateSuperscalarCode(state, instr, (j == lastLiteral.first) && (i == lastLiteral.second));
 			}
 			state.emit(codeSshLoad, sizeSshLoad);
-			if (j < RandomX_ConfigurationBase::CacheAccesses - 1) {
+			if (j < RandomX_CurrentConfig.CacheAccesses - 1) {
 				int32_t fixPos = state.codePos;
 				state.emit(codeSshPrefetch, sizeSshPrefetch);
 				//and x7, x{addrReg}, x7
@@ -1101,13 +1101,13 @@ namespace randomx {
 	void JitCompilerRV64::v1_CBRANCH(HANDLER_ARGS) {
 		int reg = isn.dst;
 		int target = state.registerUsage[reg] + 1;
-		int shift = isn.getModCond() + RandomX_ConfigurationBase::JumpOffset;
+		int shift = isn.getModCond() + RandomX_CurrentConfig.JumpOffset;
 		int32_t imm = unsigned32ToSigned2sCompl(isn.getImm32());
 		imm |= (1UL << shift);
-		if (RandomX_ConfigurationBase::JumpOffset > 0 || shift > 0)
+		if (RandomX_CurrentConfig.JumpOffset > 0 || shift > 0)
 			imm &= ~(1UL << (shift - 1));
 		//x8 = branchMask
-		emitImm32(state, (int32_t)((1 << RandomX_ConfigurationBase::JumpBits) - 1) << shift, Tmp1Reg);
+		emitImm32(state, (int32_t)((1 << RandomX_CurrentConfig.JumpBits) - 1) << shift, Tmp1Reg);
 		//x{dst} += {imm}
 		emitImm32(state, imm, regR(isn.dst), regR(isn.dst), Tmp2Reg);
 		//and x8, x8, x{dst}

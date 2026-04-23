@@ -81,9 +81,13 @@ xmrig::Coin::Coin(const rapidjson::Value &value)
 }
 
 
-xmrig::Algorithm xmrig::Coin::algorithm(uint8_t) const
+xmrig::Algorithm xmrig::Coin::algorithm(uint8_t majorVersion) const
 {
-    return coinInfo[m_id].algorithm;
+  if (m_id == xmrig::Coin::SALVIUM) {
+    if (majorVersion < 12)
+      return xmrig::Algorithm::RX_0;
+  }
+  return coinInfo[m_id].algorithm;
 }
 
 
