@@ -558,7 +558,19 @@ void xmrig::Miner::setJob(const Job &job, bool donate)
 #   ifdef XMRIG_ALGO_RANDOMX
     if (job.algorithm().family() == Algorithm::RANDOM_X && !Rx::isReady(job)) {
         if (d_ptr->algorithm != job.algorithm()) {
+            // Stop mining to prevent conflicts during algorithm change
             stop();
+
+            mutex.lock();
+            Rx::destroy();
+            Rx::init(this);
+            mutex.unlock();
+            
+            // Clear any existing algorithm-specific state in backends
+            // This ensures clean state for new algorithm
+            for (IBackend *backend : d_ptr->backends) {
+                backend->setJob(job);
+            }
         }
         else {
             Nonce::pause(true);
