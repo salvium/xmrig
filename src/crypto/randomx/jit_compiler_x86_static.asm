@@ -60,7 +60,9 @@ PUBLIC randomx_reciprocal_fast
 RANDOMX_SCRATCHPAD_MASK     EQU 4194240
 RANDOMX_DATASET_BASE_MASK   EQU 2147483584
 RANDOMX_CACHE_MASK          EQU 8388607
-    ;; RANDOMX_CACHE_MASK          EQU 4194303
+;; Placeholder only: runtime code patches the live helper blobs from
+;; RandomX_CurrentConfig.CacheMask_Calculated.
+;; RANDOMX_CACHE_MASK          EQU 4194303 ;; old value (rx/0)
 
 randomx_prefetch_scratchpad PROC
 	mov rdx, rax

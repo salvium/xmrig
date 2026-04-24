@@ -107,7 +107,7 @@ RandomX_ConfigurationSalvium::RandomX_ConfigurationSalvium()
     ArgonSalt = "RandomXSalvium\x01";
     ArgonIterations = 4;
     ArgonMemory = 524288;
-    //RecalculateDerived();
+    RecalculateDerived();
 }
 
 RandomX_ConfigurationYada::RandomX_ConfigurationYada()
@@ -128,6 +128,8 @@ RandomX_ConfigurationBase::RandomX_ConfigurationBase()
     , CacheLineAlignMask_Calculated(0)
     , DatasetExtraItems_Calculated(0)
     , ConditionMask_Calculated(0)
+    , CacheSizeBytes_Calculated(0)
+    , CacheMask_Calculated(0)
     , ArgonIterations(3)
 	, ArgonLanes(1)
 	, ArgonSalt("RandomX\x03")
@@ -239,7 +241,7 @@ void RandomX_ConfigurationBase::Apply()
 	ScratchpadL3Mask64_Calculated = ((ScratchpadL3_Size / sizeof(uint64_t)) / 8 - 1) * 64;
 
 #if defined(XMRIG_FEATURE_ASM) && (defined(_M_X64) || defined(__x86_64__))
-	*(uint32_t*)(codeSshPrefetchTweaked + 3) = ArgonMemory * 16 - 1;
+	*(uint32_t*)(codeSshPrefetchTweaked + 3) = CacheMask_Calculated;
 	// Not needed right now because all variants use default dataset base size
 	//const uint32_t DatasetBaseMask = DatasetBaseSize - RANDOMX_DATASET_ITEM_SIZE;
 	//*(uint32_t*)(codeReadDatasetTweaked + 9) = DatasetBaseMask;
@@ -390,6 +392,13 @@ void RandomX_ConfigurationBase::RecalculateDerived()
     CacheLineAlignMask_Calculated = (DatasetBaseSize - 1) & ~(uint64_t(RANDOMX_DATASET_ITEM_SIZE) - 1);
     DatasetExtraItems_Calculated  = DatasetExtraSize / RANDOMX_DATASET_ITEM_SIZE;
     ConditionMask_Calculated      = ((1u << JumpBits) - 1u) << JumpOffset;
+
+    CacheSizeBytes_Calculated = ArgonMemory * randomx::ArgonBlockSize;
+    CacheMask_Calculated = static_cast<uint32_t>(CacheSizeBytes_Calculated / randomx::CacheLineSize - 1);
+
+#   if (XMRIG_ARM == 8) || defined(XMRIG_RISCV)
+    Log2_CacheSize = Log2(CacheSizeBytes_Calculated / randomx::CacheLineSize);
+#   endif
 }
 
 RandomX_ConfigurationMonero RandomX_MoneroConfig;

@@ -111,6 +111,17 @@ namespace rv64 {
 
 namespace randomx {
 
+    constexpr uint32_t RV64_LITERAL_L1_MASK_OFFSET          = 80;
+    constexpr uint32_t RV64_LITERAL_L2_MASK_OFFSET          = 84;
+    constexpr uint32_t RV64_LITERAL_L3_MASK_OFFSET          = 88;
+    constexpr uint32_t RV64_LITERAL_DATASET_MASK_OFFSET     = 92;
+    constexpr uint32_t RV64_LITERAL_CACHE_MASK_OFFSET       = 112;
+    constexpr uint32_t RV64_LITERAL_E_SET_MASK0_OFFSET      = 120;
+    constexpr uint32_t RV64_LITERAL_E_SET_MASK1_OFFSET      = 128;
+    constexpr uint32_t RV64_LITERAL_SOFT_AES_TABLE0_OFFSET  = 136;
+    constexpr uint32_t RV64_LITERAL_SOFT_AES_TABLE1_OFFSET  = 144;
+    constexpr uint32_t RV64_LITERAL_IMUL_RCP_BASE_OFFSET    = 152;
+  
 	constexpr size_t MaxRandomXInstrCodeSize = 56;     //FDIV_M requires 56 bytes of rv64 code
 	constexpr size_t MaxSuperscalarInstrSize = 12;     //IXOR_C requires 12 bytes of rv64 code
 	constexpr size_t SuperscalarProgramHeader = 136;   //overhead per superscalar program
@@ -138,7 +149,7 @@ namespace randomx {
 #define MaskL2Shift (32 - RandomX_CurrentConfig.Log2_ScratchpadL2)
 #define	MaskL3Shift (32 - RandomX_CurrentConfig.Log2_ScratchpadL3)
 
-	constexpr int RcpLiteralsOffset = 144;
+	constexpr int RcpLiteralsOffset = 152;
 
 	constexpr int LiteralPoolReg = 3; //x3
 	constexpr int SpadReg = 5;  //x5
@@ -614,7 +625,9 @@ namespace randomx {
 		state.emitAt(LiteralPoolOffset + 84, reinterpret_cast<const uint8_t*>(&L2_Mask), sizeof(L2_Mask));
 		state.emitAt(LiteralPoolOffset + 88, reinterpret_cast<const uint8_t*>(&L3_Mask), sizeof(L3_Mask));
 		state.emitAt(LiteralPoolOffset + 92, reinterpret_cast<const uint8_t*>(&DatasetBaseSize_Mask), sizeof(DatasetBaseSize_Mask));
-
+		const uint32_t Cache_Mask = RandomX_CurrentConfig.CacheMask_Calculated;
+		state.emitAt(LiteralPoolOffset + 112, reinterpret_cast<const uint8_t*>(&Cache_Mask), sizeof(Cache_Mask));
+ 
 		state.emitAt(LiteralPoolSize, codeDataInit, sizeDataInit + sizePrologue + sizeLoopBegin);
 		entryDataInit = state.code + LiteralPoolSize;
 		entryProgram = state.code + LiteralPoolSize + sizeDataInit;

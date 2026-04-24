@@ -74,10 +74,13 @@ struct RandomX_ConfigurationBase
 
     uint64_t JumpBits;
     uint64_t JumpOffset;
-
+  
     uint64_t CacheLineAlignMask_Calculated;
     uint64_t DatasetExtraItems_Calculated;
     uint64_t ConditionMask_Calculated;
+
+    uint64_t CacheSizeBytes_Calculated;
+    uint32_t CacheMask_Calculated;
 
     uint32_t ArgonIterations;
 	uint32_t ArgonLanes;
