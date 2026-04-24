@@ -69,7 +69,8 @@
 #define RANDOMX_SCRATCHPAD_MASK      4194240
 #define RANDOMX_DATASET_BASE_MASK    2147483584
 #define RANDOMX_CACHE_MASK           8388607
-//#define RANDOMX_CACHE_MASK           4194303
+/* Placeholder only: runtime code patches the live helper blobs from
+ * RandomX_CurrentConfig.CacheMask_Calculated. */
 
 #define db .byte
 

@@ -104,6 +104,21 @@ namespace randomx {
 
 	*/
 
+    static void patch_and_rbx_imm32(uint8_t* code, size_t size, uint32_t value)
+    {
+        // Look for: 48 81 E3 xx xx xx xx   => and rbx, imm32
+        for (size_t i = 0; i + 7 <= size; ++i) {
+            if (code[i + 0] == 0x48 &&
+                code[i + 1] == 0x81 &&
+                code[i + 2] == 0xE3) {
+                *(uint32_t*)(code + i + 3) = value;
+                return;
+            }
+        }
+
+        throw std::runtime_error("Failed to patch x86 cache mask immediate");
+    }
+  
 #	if defined(_MSC_VER) && (defined(_DEBUG) || defined (RELWITHDEBINFO))
 	#define ADDR(x) ((((uint8_t*)&x)[0] == 0xE9) ? (((uint8_t*)&x) + *(const int32_t*)(((uint8_t*)&x) + 1) + 5) : ((uint8_t*)&x))
 #	else
@@ -378,8 +393,12 @@ namespace randomx {
 					codePos += 3;
 					emit(RandomX_CurrentConfig.codeSshPrefetchTweaked, codeSshPrefetchSize, code, codePos);
 					uint8_t* p = code + codePos;
-					emit(codeDatasetInitAVX2SshPrefetch, datasetInitAVX2SshPrefetchSize, code, codePos);
-					p[3] += prog.getAddressRegister() << 3;
+                    const uint32_t prefetchStart = codePos;
+                    emit(codeDatasetInitAVX2SshPrefetch, datasetInitAVX2SshPrefetchSize, code, codePos);
+                    patch_and_rbx_imm32(code + prefetchStart,
+                                        datasetInitAVX2SshPrefetchSize,
+                                        RandomX_CurrentConfig.CacheMask_Calculated);
+                    p[3] += prog.getAddressRegister() << 3;
 				}
 			}
 
@@ -393,8 +412,11 @@ namespace randomx {
 			return;
 		}
 
-		memcpy(code + superScalarHashOffset, codeSshInit, codeSshInitSize);
-		codePos = superScalarHashOffset + codeSshInitSize;
+        memcpy(code + superScalarHashOffset, codeSshInit, codeSshInitSize);
+        patch_and_rbx_imm32(code + superScalarHashOffset,
+                            codeSshInitSize,
+                            RandomX_CurrentConfig.CacheMask_Calculated);
+        codePos = superScalarHashOffset + codeSshInitSize;
 		for (unsigned j = 0; j < RandomX_CurrentConfig.CacheAccesses; ++j) {
 			SuperscalarProgram& prog = programs[j];
 			uint32_t pos = codePos;

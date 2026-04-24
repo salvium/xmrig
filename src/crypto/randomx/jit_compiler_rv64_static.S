@@ -60,9 +60,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     #error RANDOMX_PROGRAM_SIZE larger than 494 is not supported.
 #endif
 
-#define RANDOMX_ARGON_MEMORY 262144
-#define RANDOMX_CACHE_MASK (RANDOMX_ARGON_MEMORY*16-1)
-
+//#define RANDOMX_ARGON_MEMORY 262144
+//#define RANDOMX_CACHE_MASK (RANDOMX_ARGON_MEMORY*16-1)
+/* Cache mask is supplied at runtime by the JIT compiler via the literal pool.
+ * Do not derive it from a compile-time ArgonMemory define here. */
+    
 /* shared literal pool: 4 KB */
     /* space for 256 IMUL_RCP literals -2048 */
     /* filled by JIT compiler */
@@ -89,14 +91,16 @@ literal_pool:
     .word (/*RANDOMX_DATASET_BASE_SIZE*/0) /* filled by JIT compiler */
     .dword 0x80f0000000000000
     .dword 0x00ffffffffffffff
+    /* cache mask literal, +112 */
+    .dword (/*RANDOMX_CACHE_MASK*/0) /* filled by JIT compiler */
 DECL(randomx_riscv64_literals_end):
-    /* E reg. set masks, +112,+120 */
+    /* E reg. set masks, +120,+128 */
     .dword 0 /* filled by JIT compiler */
     .dword 0 /* filled by JIT compiler */
-    /* soft AES table addresses, +128,+136 */
+    /* soft AES table addresses, +136,+144 */
     .dword 0 /* filled by JIT compiler */
     .dword 0 /* filled by JIT compiler */
-    /* space for 238 IMUL_RCP literals, +144 */
+    /* space for 238 IMUL_RCP literals, +152 */
     .fill 238,8,0 /* filled by JIT compiler */
 
 /* ================================= */
@@ -295,15 +299,15 @@ DECL(randomx_riscv64_prologue):
     /* FSCAL, E reg. masks */
     ld x12, 96(x3)
     ld x13, 104(x3)
-    ld x14, 112(x3)
-    ld x15, 120(x3)
+    ld x14, 120(x3)
+    ld x15, 128(x3)
     /* IMUL_RCP literals */
-    fld f26, 176(x3)
-    fld f27, 184(x3)
-    fld f28, 192(x3)
-    fld f29, 200(x3)
-    fld f30, 208(x3)
-    fld f31, 216(x3)
+    fld f26, 184(x3)
+    fld f27, 192(x3)
+    fld f28, 200(x3)
+    fld f29, 208(x3)
+    fld f30, 216(x3)
+    fld f31, 224(x3)
 
 .balign 4
 DECL(randomx_riscv64_loop_begin):
@@ -392,10 +396,10 @@ loop_begin:
     fmv.d.x f14, x30
     fmv.d.x f15, x31
     /* reload clobbered IMUL_RCP regs */
-    ld x28, 144(x3)
-    ld x29, 152(x3)
-    ld x30, 160(x3)
-    ld x31, 168(x3)
+    ld x28, 152(x3)
+    ld x29, 160(x3)
+    ld x30, 168(x3)
+    ld x31, 176(x3)
 
 DECL(randomx_riscv64_data_read):
     xor x8, x20, x22 /* JIT compiler will adjust the registers */
@@ -478,8 +482,8 @@ DECL(randomx_riscv64_fix_loop_call):
     lwu x11, 84(x3)
     ld x12, 96(x3)
     ld x13, 104(x3)
-    ld x14, 112(x3)
-    ld x15, 120(x3)
+    ld x14, 120(x3)
+    ld x15, 128(x3)
 
 DECL(randomx_riscv64_spad_store):
     /* store integer registers */
@@ -630,8 +634,8 @@ DECL(randomx_riscv64_spad_store_softaes):
     lwu x11, 84(x3)
     ld x12, 96(x3)
     ld x13, 104(x3)
-    ld x14, 112(x3)
-    ld x15, 120(x3)
+    ld x14, 120(x3)
+    ld x15, 128(x3)
 
 DECL(randomx_riscv64_loop_end):
     xor x26, x16, x18 /* JIT compiler will adjust the registers */
@@ -1184,7 +1188,8 @@ superscalar_hash:
     ld x30, 0(x3) /* superscalarMul0 */
     addi x8, x7, 1
     ld x9, 8(x3)
-    li x31, RANDOMX_CACHE_MASK
+    /* li x31, RANDOMX_CACHE_MASK */
+    ld x31, 112(x3)   /* cache mask from literal pool */
     ld x10, 16(x3)
     ld x11, 24(x3)
     mul x8, x8, x30
@@ -1222,7 +1227,8 @@ DECL(randomx_riscv64_ssh_load):
     xor x13, x13, x29
     ld x29, 56(x7)
     xor x14, x14, x28
-    li x7, RANDOMX_CACHE_MASK
+    /* li x7, RANDOMX_CACHE_MASK */
+    ld x7, 112(x3)
     xor x15, x15, x29
 
 DECL(randomx_riscv64_ssh_prefetch):
